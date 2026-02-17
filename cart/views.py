@@ -10,11 +10,6 @@ class CartViewSet(viewsets.GenericViewSet):
     """
     Endpoints for the authenticated user's cart.
 
-    GET    /cart/           → view cart
-    POST   /cart/items/     → add item
-    PATCH  /cart/items/{id}/ → update quantity
-    DELETE /cart/items/{id}/ → remove item
-    DELETE /cart/clear/     → empty the cart
     """
 
     permission_classes = [permissions.IsAuthenticated]

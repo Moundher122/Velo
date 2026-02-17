@@ -60,7 +60,6 @@ class ProductVariant(models.Model):
 class VariantAttribute(models.Model):
     """
     Dynamic key-value attribute for a variant.
-    Examples: size=M, color=red, material=cotton
     """
 
     variant = models.ForeignKey(
