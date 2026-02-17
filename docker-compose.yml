@@ -1,0 +1,35 @@
+services:
+  db:
+    image: postgres:18
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: velo
+      POSTGRES_USER: velo
+      POSTGRES_PASSWORD: velo_secret
+    volumes:
+        - postgres_data:/var/lib/postgresql
+    ports:
+      - "5432:5432"
+
+  web:
+    build: .
+    restart: unless-stopped
+    environment:
+      DB_ENGINE: django.db.backends.postgresql
+      DB_NAME: velo
+      DB_USER: velo
+      DB_PASSWORD: velo_secret
+      DB_HOST: db
+      DB_PORT: "5432"
+    volumes:
+      - static_data:/app/staticfiles
+      - media_data:/app/media
+    ports:
+      - "8000:8000"
+    depends_on:
+      - db
+      
+volumes:
+  postgres_data:
+  static_data:
+  media_data:
