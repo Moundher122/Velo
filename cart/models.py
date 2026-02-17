@@ -1,4 +1,3 @@
-import uuid
 from decimal import Decimal
 
 from django.conf import settings
@@ -9,7 +8,6 @@ from django.db import models
 class Cart(models.Model):
     """Shopping cart linked to an authenticated user."""
 
-    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     user = models.OneToOneField(
         settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE,
@@ -39,8 +37,6 @@ class Cart(models.Model):
 
 class CartItem(models.Model):
     """A single line item inside a cart."""
-
-    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     cart = models.ForeignKey(Cart, on_delete=models.CASCADE, related_name="items")
     variant = models.ForeignKey(
         "catalog.ProductVariant",

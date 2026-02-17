@@ -4,7 +4,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework_simplejwt.tokens import RefreshToken
 
-from .serializers import UserProfileSerializer, UserRegistrationSerializer
+from .serializers import UserProfileSerializer, UserRegistrationSerializer, UserLoginSerializer
 
 User = get_user_model()
 
@@ -35,7 +35,23 @@ class RegisterView(generics.CreateAPIView):
             },
             status=status.HTTP_201_CREATED,
         )
+class LoginView(generics.GenericAPIView):
+    """Authenticate user and return JWT tokens."""
 
+    serializer_class = UserLoginSerializer
+    permission_classes = [permissions.AllowAny]
+
+    def post(self, request):
+        serializer = self.serializer_class(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        user = serializer.validated_data["user"]
+        return Response(
+            {
+                "user": UserProfileSerializer(user).data,
+                "tokens": _get_tokens_for_user(user),
+            },
+            status=status.HTTP_200_OK,
+        )
 
 class ProfileView(generics.RetrieveUpdateAPIView):
     """Retrieve or update the authenticated user's profile."""

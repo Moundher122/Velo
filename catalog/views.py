@@ -22,6 +22,7 @@ class ProductViewSet(viewsets.ModelViewSet):
     """
 
     permission_classes = [IsAdminOrReadOnly]
+    http_method_names = ["get", "post", "patch", "delete"]
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
     search_fields = ["name", "description"]
     ordering_fields = ["name", "created_at"]
@@ -33,7 +34,6 @@ class ProductViewSet(viewsets.ModelViewSet):
             qs = qs.annotate(variant_count=Count("variants"))
         elif self.action == "retrieve":
             qs = qs.prefetch_related("variants__attributes")
-        # Non-admin users only see active products
         if not (self.request.user.is_authenticated and self.request.user.is_staff):
             qs = qs.filter(is_active=True)
         return qs
@@ -53,6 +53,7 @@ class ProductVariantViewSet(viewsets.ModelViewSet):
     """
 
     permission_classes = [IsAdminOrReadOnly]
+    http_method_names = ["get", "post", "patch", "delete",]
 
     def get_queryset(self):
         return (
