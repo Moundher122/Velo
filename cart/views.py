@@ -2,56 +2,36 @@ from rest_framework import permissions, status, viewsets
 from rest_framework.decorators import action
 from rest_framework.response import Response
 
-from .models import Cart, CartItem
 from .serializers import CartItemReadSerializer, CartItemWriteSerializer, CartSerializer
+from .services.services import CartService
 
 
 class CartViewSet(viewsets.GenericViewSet):
     """
     Endpoints for the authenticated user's cart.
-
+    All business logic is delegated to CartService.
     """
 
     permission_classes = [permissions.IsAuthenticated]
 
-    def _get_cart(self):
-        cart, _ = Cart.objects.prefetch_related(
-            "items__variant__product",
-            "items__variant__attributes",
-        ).get_or_create(user=self.request.user)
-        return cart
-
     def list(self, request):
         """View the current user's cart."""
-        cart = self._get_cart()
+        cart = CartService.get_or_create_cart(request.user)
         return Response(CartSerializer(cart).data)
 
     @action(detail=False, methods=["post"], url_path="items")
     def add_item(self, request):
         """Add an item to the cart (or increment quantity if variant already exists)."""
-        cart = self._get_cart()
         serializer = CartItemWriteSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
-        variant = serializer.validated_data["variant"]
-        quantity = serializer.validated_data.get("quantity", 1)
-        note = serializer.validated_data.get("note", "")
-
-        item, created = CartItem.objects.get_or_create(
-            cart=cart,
-            variant=variant,
-            defaults={"quantity": quantity, "note": note},
+        cart = CartService.get_or_create_cart(request.user)
+        item, created = CartService.add_item(
+            cart,
+            variant_id=serializer.validated_data["variant"].pk,
+            quantity=serializer.validated_data.get("quantity", 1),
+            note=serializer.validated_data.get("note", ""),
         )
-        if not created:
-            item.quantity += quantity
-            # Re-validate stock
-            if item.quantity > variant.stock_quantity:
-                return Response(
-                    {"quantity": f"Only {variant.stock_quantity} items available in stock."},
-                    status=status.HTTP_400_BAD_REQUEST,
-                )
-            item.note = note or item.note
-            item.save()
 
         return Response(
             CartItemReadSerializer(item).data,
@@ -61,25 +41,24 @@ class CartViewSet(viewsets.GenericViewSet):
     @action(detail=False, methods=["patch", "delete"], url_path=r"items/(?P<item_pk>[^/.]+)")
     def update_or_remove_item(self, request, item_pk=None):
         """Update quantity / note or remove an item."""
-        cart = self._get_cart()
-        try:
-            item = cart.items.select_related("variant").get(pk=item_pk)
-        except CartItem.DoesNotExist:
-            return Response({"detail": "Item not found."}, status=status.HTTP_404_NOT_FOUND)
+        cart = CartService.get_or_create_cart(request.user)
 
         if request.method == "DELETE":
-            item.delete()
+            CartService.remove_item(cart, item_pk)
             return Response(status=status.HTTP_204_NO_CONTENT)
 
         # PATCH
-        serializer = CartItemWriteSerializer(item, data=request.data, partial=True)
-        serializer.is_valid(raise_exception=True)
-        serializer.save()
+        item = CartService.update_item(
+            cart,
+            item_pk,
+            quantity=request.data.get("quantity"),
+            note=request.data.get("note"),
+        )
         return Response(CartItemReadSerializer(item).data)
 
     @action(detail=False, methods=["delete"], url_path="clear")
     def clear(self, request):
         """Remove all items from the cart."""
-        cart = self._get_cart()
-        cart.items.all().delete()
+        cart = CartService.get_or_create_cart(request.user)
+        CartService.clear_cart(cart)
         return Response(status=status.HTTP_204_NO_CONTENT)

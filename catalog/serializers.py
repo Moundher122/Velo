@@ -1,6 +1,7 @@
 from rest_framework import serializers
 
 from .models import Product, ProductVariant, VariantAttribute
+from .services.product_service import VariantService
 
 
 
@@ -52,23 +53,22 @@ class ProductVariantWriteSerializer(serializers.ModelSerializer):
 
     def create(self, validated_data):
         attributes_data = validated_data.pop("attributes", [])
-        variant = ProductVariant.objects.create(**validated_data)
-        for attr_data in attributes_data:
-            VariantAttribute.objects.create(variant=variant, **attr_data)
-        return variant
+        product_id = validated_data.pop("product", None)
+        if product_id and hasattr(product_id, "pk"):
+            product_id = product_id.pk
+        return VariantService.create_variant(
+            product_id=product_id,
+            attributes_data=attributes_data,
+            **validated_data,
+        )
 
     def update(self, instance, validated_data):
         attributes_data = validated_data.pop("attributes", None)
-        for attr, value in validated_data.items():
-            setattr(instance, attr, value)
-        instance.save()
-
-        if attributes_data is not None:
-            instance.attributes.all().delete()
-            for attr_data in attributes_data:
-                VariantAttribute.objects.create(variant=instance, **attr_data)
-
-        return instance
+        return VariantService.update_variant(
+            instance,
+            attributes_data=attributes_data,
+            **validated_data,
+        )
 
 
 class ProductListSerializer(serializers.ModelSerializer):

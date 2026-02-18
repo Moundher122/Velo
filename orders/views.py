@@ -4,7 +4,7 @@ from rest_framework.response import Response
 
 from .models import Order
 from .serializers import OrderDetailSerializer, OrderListSerializer
-from .services import OrderService
+from .services.services import OrderService
 
 
 class OrderViewSet(

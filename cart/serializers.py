@@ -1,6 +1,7 @@
 from rest_framework import serializers
 
 from catalog.serializers import ProductVariantListSerializer
+from catalog.services.product_service import VariantService
 
 from .models import Cart, CartItem
 
@@ -34,14 +35,9 @@ class CartItemWriteSerializer(serializers.ModelSerializer):
         variant = attrs.get("variant") or (self.instance and self.instance.variant)
         quantity = attrs.get("quantity", getattr(self.instance, "quantity", 1))
 
-        if variant and quantity > variant.stock_quantity:
-            raise serializers.ValidationError(
-                {"quantity": f"Only {variant.stock_quantity} items available in stock."}
-            )
-        if variant and not variant.is_active:
-            raise serializers.ValidationError(
-                {"variant": "This variant is no longer available."}
-            )
+        if variant:
+            # Delegate all stock/active checks to the catalog service
+            VariantService.validate_stock(variant, quantity)
         return attrs
 
 
