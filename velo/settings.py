@@ -78,6 +78,16 @@ DATABASES = {
 
 AUTH_USER_MODEL = "users.User"
 
+# ---------------------------------------------------------------------------
+# Cache – use Redis so DRF throttling is shared across workers/processes
+# ---------------------------------------------------------------------------
+CACHES = {
+    "default": {
+        "BACKEND": "django.core.cache.backends.redis.RedisCache",
+        "LOCATION": os.environ.get("REDIS_URL", "redis://redis:6379/0"),
+    }
+}
+
 AUTH_PASSWORD_VALIDATORS = [
     {"NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator"},
     {"NAME": "django.contrib.auth.password_validation.MinimumLengthValidator"},
@@ -109,6 +119,7 @@ REST_FRAMEWORK = {
     "DEFAULT_THROTTLE_RATES": {
         "anon": "100/hour",
         "user": "1000/hour",
+        "auth": "20/hour",
     },
 }
 

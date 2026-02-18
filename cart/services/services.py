@@ -26,6 +26,7 @@ class CartService:
                 "items__variant__product",
                 "items__variant__attributes",
             )
+            .select_for_update()
             .get_or_create(user=user)
         )
         return cart

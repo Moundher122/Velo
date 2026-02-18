@@ -1,3 +1,4 @@
+from django.db.models import Count
 from rest_framework import mixins, permissions, status, viewsets
 from rest_framework.decorators import action
 from rest_framework.response import Response
@@ -22,7 +23,9 @@ class OrderViewSet(
 
     def get_queryset(self):
         qs = Order.objects.filter(user=self.request.user)
-        if self.action == "retrieve":
+        if self.action == "list":
+            qs = qs.annotate(item_count=Count("items"))
+        elif self.action == "retrieve":
             qs = qs.prefetch_related(
                 "items__variant__product",
                 "items__variant__attributes",

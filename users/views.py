@@ -1,6 +1,7 @@
 from django.contrib.auth import get_user_model
 from rest_framework import generics, permissions, status
 from rest_framework.response import Response
+from rest_framework.throttling import ScopedRateThrottle
 from rest_framework.views import APIView
 from rest_framework_simplejwt.tokens import RefreshToken
 
@@ -23,6 +24,8 @@ class RegisterView(generics.CreateAPIView):
 
     serializer_class = UserRegistrationSerializer
     permission_classes = [permissions.AllowAny]
+    throttle_classes = [ScopedRateThrottle]
+    throttle_scope = "auth"
 
     def create(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
@@ -40,6 +43,8 @@ class LoginView(generics.GenericAPIView):
 
     serializer_class = UserLoginSerializer
     permission_classes = [permissions.AllowAny]
+    throttle_classes = [ScopedRateThrottle]
+    throttle_scope = "auth"
 
     def post(self, request):
         serializer = self.serializer_class(data=request.data)
@@ -69,7 +74,7 @@ class LogoutView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
     def post(self, request):
-        refresh_token = request.header.get("Authorization", "").split(" ")[1] if "Authorization" in request.header else None
+        refresh_token = request.headers.get("Authorization", "").split(" ")[1] if "Authorization" in request.header else None
         if not refresh_token:
             return Response(
                 {"detail": "Refresh token is required."},

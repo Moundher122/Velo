@@ -49,7 +49,7 @@ class ProductVariantWriteSerializer(serializers.ModelSerializer):
             "is_active",
             "attributes",
         )
-        read_only_fields = ("id",)
+        read_only_fields = ("id", "product")
 
     def create(self, validated_data):
         attributes_data = validated_data.pop("attributes", [])
