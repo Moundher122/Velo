@@ -14,13 +14,6 @@ services:
   web:
     build: .
     restart: unless-stopped
-    environment:
-      DB_ENGINE: django.db.backends.postgresql
-      DB_NAME: velo
-      DB_USER: velo
-      DB_PASSWORD: velo_secret
-      DB_HOST: db
-      DB_PORT: "5432"
     volumes:
       - static_data:/app/staticfiles
       - media_data:/app/media
@@ -28,7 +21,7 @@ services:
       - "8000:8000"
     depends_on:
       - db
-      
+
 volumes:
   postgres_data:
   static_data:
